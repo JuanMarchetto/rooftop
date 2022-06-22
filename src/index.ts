@@ -23,9 +23,28 @@ const getBlocks = () => API('get', 'blocks');
 const getCheck = (firstBlock: string, secondBlock: string) =>
   API('post', 'check', { blocks: [firstBlock, secondBlock] });
 
+const getConfirmation= (encoded: string,) =>
+  API('post', 'check', { encoded });
+
+const getNext = (acc:Array<string>, blocks:Array<string> )=>{
+  return blocks.filter((block)=>!acc.includes(block)).find(async(block)=>{
+    const check = await getCheck(acc[acc.length-1],block)
+    return check.message
+  })
+}
+
 (async () => {
   const {data: blocks} = await getBlocks()
   console.log(blocks);
-  const {message: check} = await getCheck(blocks[0], blocks[1])
-  console.log(check)
+  const relations = blocks.reduce(
+    (acc:Array<string>, val:string)=>[
+      ...acc,
+      !acc.length || acc.length === blocks.length -1 ? val : getNext(acc, blocks)
+    ],
+    []
+  )
+
+  console.log(relations)
+  const result = await getConfirmation(relations.join(''))
+  console.log(result)
 })()
